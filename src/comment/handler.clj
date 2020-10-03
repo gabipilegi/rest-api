@@ -7,18 +7,28 @@
             [reitit.swagger-ui :as swagger-ui]
             [ring.adapter.jetty :as jetty]))
 
+(def ok (constantly {:status 200 :body "ok"}))
+
 (def routes
-  [["/api"
-    {:swagger {:tags ["API"]}}
-    ["/ping"
-     {:get {:handler (fn [request] {:status 200 :body "Pong"})
-            :swagger {:title "Ping"
-                      :description "Ping"}}}]]
-   ["/swagger.json"
+  [["/swagger.json"
     {:get {:handler (swagger/create-swagger-handler)
            :no-doc  true
-           :swagger {:title "Comment system API"
-                     :description "Comment system API"}}}]])
+           :swagger {:info {:title "Comment system API"}}}}]
+   ["/comments"
+    {:swagger {:tags ["comments"]}}
+    [""
+     {:get  {:summary "Get all comments"
+             :handler ok}
+      :post {:summary "Create a new comment"
+             :handler ok}}]
+    ["/slug"
+     {:get {:summary "Get comments by slug"
+            :handler ok}}]
+    ["/id/:id"
+     {:put    {:summary "Update a comment by the moderator"
+               :handler ok}
+      :delete {:summary "Delete a comment by yhe moderator"
+               :handler ok}}]]])
 
 
 (def router
