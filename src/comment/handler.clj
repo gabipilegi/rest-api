@@ -1,15 +1,18 @@
 (ns comment.handler
-  (:require [muuntaja.core :as m]
+  (:require comment.middleware
+            [muuntaja.core :as m]
             [reitit.coercion.spec :as coercion.spec]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
             [reitit.ring.middleware.exception :as exception]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.swagger :as swagger]
-            [reitit.swagger-ui :as swagger-ui]
-            [ring.adapter.jetty :as jetty]))
+            [reitit.swagger-ui :as swagger-ui]))
 
-(def ok (constantly {:status 200 :body "ok"}))
+(defn ok [{:keys [db] :as request}]
+  (println db)
+  {:status 200
+   :body   "ok"})
 
 (def routes
   [["/swagger.json"
@@ -43,28 +46,19 @@
       :delete {:summary "Delete a comment by the moderator"
                :handler ok}}]]])
 
-
-(def router
-  (ring/router routes
-               {:data {:muuntaja   m/instance
-                       :coercion   coercion.spec/coercion
-                       :middleware [swagger/swagger-feature
-                                    exception/exception-middleware
-                                    muuntaja/format-negotiate-middleware
-                                    muuntaja/format-response-middleware
-                                    muuntaja/format-request-middleware
-                                    coercion/coerce-request-middleware
-                                    coercion/coerce-response-middleware]}}))
-
-(def app
-  (ring/ring-handler router
+(defn create-app
+  [db]
+  (ring/ring-handler (ring/router routes
+                                  {:data {:db         db
+                                          :muuntaja   m/instance
+                                          :coercion   coercion.spec/coercion
+                                          :middleware [swagger/swagger-feature
+                                                       exception/exception-middleware
+                                                       muuntaja/format-negotiate-middleware
+                                                       muuntaja/format-response-middleware
+                                                       muuntaja/format-request-middleware
+                                                       coercion/coerce-request-middleware
+                                                       coercion/coerce-response-middleware
+                                                       comment.middleware/db]}})
                      (ring/routes (swagger-ui/create-swagger-ui-handler
                                    {:path "/"}))))
-
-
-(defn start []
-  (jetty/run-jetty #'app {:port 3000 :join? false})
-  (println "Server running on port 3000"))
-
-(comment
-  (start))
